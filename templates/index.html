@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credit Card Spending Analysis Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .stats-banner {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            border-right: 2px solid #f0f0f0;
+        }
+
+        .stat-item:last-child {
+            border-right: none;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .card-icon {
+            font-size: 2em;
+            margin-right: 15px;
+        }
+
+        .card-title {
+            font-size: 1.4em;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+            animation: slideIn 0.4s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .result-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .result-details {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .trust-score {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .score-bar {
+            flex: 1;
+            height: 25px;
+            background: #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .score-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b 0%, #ffd93d 50%, #6bcf7f 100%);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #f0f0f0;
+            text-align: center;
+        }
+
+        .stat-box-label {
+            color: #888;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .stat-box-value {
+            color: #667eea;
+            font-size: 1.5em;
+            font-weight: 700;
+        }
+
+        .alert {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .alert-info {
+            background: #e3f2fd;
+            color: #1976d2;
+            border-left: 4px solid #1976d2;
+        }
+
+        .alert-success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #2e7d32;
+        }
+
+        .alert-warning {
+            background: #fff3e0;
+            color: #f57c00;
+            border-left: 4px solid #f57c00;
+        }
+
+        .alert-danger {
+            background: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #c62828;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+
+        .badge-high {
+            background: #c8e6c9;
+            color: #2e7d32;
+        }
+
+        .badge-medium {
+            background: #fff9c4;
+            color: #f57f17;
+        }
+
+        .badge-low {
+            background: #ffcdd2;
+            color: #c62828;
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-banner {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-item {
+                border-right: none;
+                border-bottom: 2px solid #f0f0f0;
+            }
+
+            .stat-item:last-child {
+                border-bottom: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💳 Credit Card Analysis Dashboard</h1>
+            <p class="subtitle">Real-time insights and analytics powered by your data</p>
+        </header>
+
+        <div class="stats-banner" id="statsBanner">
+            <div class="stat-item">
+                <div class="stat-number" id="totalTransactions">-</div>
+                <div class="stat-label">Total Transactions</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="totalCustomers">-</div>
+                <div class="stat-label">Customers</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="totalMerchants">-</div>
+                <div class="stat-label">Merchants</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="avgTransaction">-</div>
+                <div class="stat-label">Avg Transaction</div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Merchant Trust Score -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🏪</div>
+                    <div class="card-title">Merchant Trust Score</div>
+                </div>
+                <div class="input-group">
+                    <label for="merchantName">Enter Merchant Name</label>
+                    <input type="text" id="merchantName" placeholder="e.g., Smith-Russell">
+                </div>
+                <button onclick="getMerchantTrustScore()" id="merchantBtn">Get Trust Score</button>
+                <div id="trustScoreResult" class="result"></div>
+            </div>
+
+            <!-- Customer Spending Analysis -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">👤</div>
+                    <div class="card-title">Customer Analysis</div>
+                </div>
+                <div class="input-group">
+                    <label for="customerId">Enter Customer ID</label>
+                    <input type="number" id="customerId" placeholder="e.g., 752858">
+                </div>
+                <button onclick="getCustomerAnalysis()" id="customerBtn">Analyze Customer</button>
+                <div id="customerResult" class="result"></div>
+            </div>
+
+            <!-- Category Analytics -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">📊</div>
+                    <div class="card-title">Category Insights</div>
+                </div>
+                <div class="input-group">
+                    <label for="category">Select Category</label>
+                    <select id="category">
+                        <option value="">Loading categories...</option>
+                    </select>
+                </div>
+                <button onclick="getCategoryInsights()" id="categoryBtn">Get Insights</button>
+                <div id="categoryResult" class="result"></div>
+            </div>
+
+            <!-- Transaction Risk Assessment -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">⚠️</div>
+                    <div class="card-title">Risk Assessment</div>
+                </div>
+                <div class="input-group">
+                    <label for="transactionAmount">Transaction Amount ($)</label>
+                    <input type="number" id="transactionAmount" placeholder="e.g., 500">
+                </div>
+                <div class="input-group">
+                    <label for="transactionCategory">Category</label>
+                    <select id="transactionCategory">
+                        <option value="">Loading categories...</option>
+                    </select>
+                </div>
+                <button onclick="assessRisk()" id="riskBtn">Assess Risk</button>
+                <div id="riskResult" class="result"></div>
+            </div>
+
+            <!-- City Analytics -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🏙️</div>
+                    <div class="card-title">City Analysis</div>
+                </div>
+                <div class="input-group">
+                    <label for="cityName">Enter City Name</label>
+                    <input type="text" id="cityName" placeholder="e.g., Mumbai">
+                </div>
+                <button onclick="getCityAnalysis()" id="cityBtn">Analyze City</button>
+                <div id="cityResult" class="result"></div>
+            </div>
+
+            <!-- Spending Predictor -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🔮</div>
+                    <div class="card-title">Spending Predictor</div>
+                </div>
+                <div class="input-group">
+                    <label for="age">Customer Age</label>
+                    <input type="number" id="age" placeholder="e.g., 35">
+                </div>
+                <div class="input-group">
+                    <label for="gender">Gender</label>
+                    <select id="gender">
+                        <option value="M">Male</option>
+                        <option value="F">Female</option>
+                    </select>
+                </div>
+                <button onclick="predictSpending()" id="predictBtn">Predict Spending</button>
+                <div id="predictResult" class="result"></div>
+            </div>
+        </div>
+
+        <footer>
+            <p>© 2025 Credit Card Analysis Dashboard | Python Programming Lab Mini Project</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">Made By Vineet Shirode & Team</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
